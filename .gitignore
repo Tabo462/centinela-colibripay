@@ -1,0 +1,55 @@
+# --- Secretos y credenciales (JAMÁS subir) ---
+.env
+*.env
+secrets/
+secretos/
+*credencial*
+*credential*
+*password*
+*contrasena*
+*.kdbx
+*.pem
+*.key
+*.pfx
+*.ppk
+id_rsa*
+*.ovpn
+.wslconfig
+
+# --- Imágenes de instalación y discos de VM (pesados) ---
+*.iso
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+*.ova
+*.nvram
+
+# --- Volcados, hashes y loot de ataque ---
+*.ntds
+ntds.dit
+SYSTEM
+*.hash
+*.hashes
+*.pcap
+loot/
+botin/
+
+# --- Reportes crudos que pueden traer datos sensibles ---
+bloodhound_*.json
+*.zip.bloodhound
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+
+# --- Logs (revísalos antes de subir cualquier fragmento) ---
+*.log
+
+# --- Editores / IDE ---
+.vscode/
+.idea/
+*.swp
+*~
