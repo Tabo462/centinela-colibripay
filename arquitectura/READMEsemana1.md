@@ -115,3 +115,80 @@ servicio son blanco de alto valor.
 
     Devolvió `svc_sql` con su SPN (blanco plantado) y `krbtgt` (cuenta de sistema del
     KDC, incluida por tener SPN).
+    
+
+
+# **Auditoria Avanzada por GPO**
+
+Por default, Windows registra pocos eventos de seguridad. Se configura una Group Policy Object de auditoria, que se enlaza a la OU ColibriPpay, para que Windows empiece a registrar los eventos que los ataques de la Semana 3 van a generar. Sin estos sensores, el SIEM de la Semana 2 no tendra nada que leer.
+
+## Sensores configurados y qué detecta cada uno:
+
+| Sensor (subcategoría)              | Event ID    | Detecta                          |
+|------------------------------------|-------------|----------------------------------|
+| Audit Logon                        | 4624 / 4625 | Password spraying, logins        |
+| Audit Kerberos Service Ticket Ops  | 4769        | Kerberoasting                    |
+| Audit Kerberos Authentication      | 4768        | Peticiones de TGT                |
+| Audit User Account Management      | 4720        | Persistencia (cuentas backdoor)  |
+| Audit Security Group Management    | 4728 / 4732 | Escalada por grupos              |
+| Audit Process Creation             | 4688        | Qué se ejecuta (con línea de cmd)|
+
+16. En **Group Policy Management** (Tools → Group Policy Management), click derecho
+    sobre la OU `ColibriPay` → *Create a GPO in this domain, and Link it here* →
+    nombre `Auditoria - ColibriPay`.
+    ![alt text](<imagenes/16CrearGPO.png>)
+
+17. Click derecho sobre el GPO → *Edit*. En el editor, navegar a:
+    Computer Configuration → Policies → Windows Settings → Security Settings →
+    Advanced Audit Policy Configuration → Audit Policies. 
+
+18. Activar las subcategorias 
+    - **Logon/Logoff → Audit Logon**: Success + Failure. (4624/4625; el 4625 es el
+      sensor del password spray y alimenta el IDS.)
+    - **Account Logon → Audit Kerberos Service Ticket Operations**: Success + Failure.
+      (4769; sensor del Kerberoasting.)
+    - **Account Logon → Audit Kerberos Authentication Service**: Success + Failure. (4768)
+    - **Account Management → Audit User Account Management**: Success + Failure. (4720)
+    - **Account Management → Audit Security Group Management**: Success.
+    - **Detailed Tracking → Audit Process Creation**: Success. (4688)
+    ![alt text](<17Colocarsubcategory.png>)
+19. Incluir linea de comando en el evento 4688 (Audit Process Creation):
+
+Computer Configuration → Policies → Administrative Templates → System →
+    Audit Process Creation → Include command line in process creation event  →
+    **Enabled**
+    > Antes el evento 4688 registraba solo `powershell.exe`
+    > Ahora registra `Powershell.exe -enc <base64>`
+    > Hicimos que podamos ver los argumentos de una ejecución, pero ahora los argumentos pueden tener informacion sensible y cualqueira con permiso de lectura en los logs puede ver esos argummentos.
+
+20. Forzar el uso de las subcategorias avanzadas:
+
+Computer Configuration → Policies → Windows Settings → Security Settings →
+    Local Policies → Security Options → Audit: Force audit policy subcategory
+    settings (Windows Vista or later) → **Enabled**.
+
+21. Cerramos el Editor, y abrimos **Powershell** como **administrador** para verificar la configuracion:
+    ```powershell
+    gpupdate /force
+    auditpol /get /category:*
+    ```
+
+22. Probamos que el sensor funciona, provocando un login fallido a proposito y confirmamos que se registra el evento 4625 (Logon Failure):
+
+    ```powershell
+        runas /user:corp\mtorres cmd     # metemos una contraseña erronea
+
+        Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625} -MaxEvents 5 |
+            Format-List TimeCreated, Message
+    ```
+    ![alt text](<imagenes/22LogonFailure.png>)
+    
+    > El evento 4625 apareció con `Account Name: mtorres`, `Failure Reason: bad
+    > password`, `Status 0xC000006D / Sub Status 0xC0000064` (credencial inválida) y
+    > `Logon Type: 2` (interactivo). En la Semana 3, un password spray generará estos
+    > 4625 en ráfaga desde una misma IP — el patrón que el SIEM y el IDS detectarán.
+
+
+
+
+
