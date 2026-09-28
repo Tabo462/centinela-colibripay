@@ -5,6 +5,9 @@ secrets/
 secretos/
 *credencial*
 *credential*
+*credentials*
+*-credentials*
+Wazuh-credentials.txt
 *password*
 *contrasena*
 *.kdbx
