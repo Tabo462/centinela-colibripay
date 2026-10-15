@@ -132,18 +132,98 @@ La cadena completa que esto valida: GPO de auditoría (Semana 1) --> Windows reg
 4625 --> el agente lo captura --> viaja cifrado --> llega a Wazuh
 en AWS --> se correlaciona con la regla 60122 --> aparece en el dashboard en tiempo real.
 
-## Estado al cierre de la Semana 2
 
-- [x] Wazuh desplegado en AWS EC2 (health-check 5/5)
-- [x] Elastic IP fija asociada
-- [x] Agente en DC01 reportando (**Active**) — arquitectura híbrida on-prem-->cloud
-- [x] Detección verificada (4625 --> regla 60122, nivel 5)
-- [ ] Sysmon en DC01 (telemetría profunda / 4688 con línea de comando) --> pendiente
-- [ ] Integración del IDS propio como active-response --> pendiente
+# Sysmon  telemetría profunda
 
-## Higiene de costos (AWS)
+La auditoría nativa de Windows dice *"se creó un proceso"*. Sysmon dice *qué
+proceso, con qué argumentos, lanzado por quién, con qué hash, desde dónde*. Van a ser los datos para cazar los ataques de la
+Semana 3.
 
-- **Apagar (Stop)** la instancia al terminar cada sesión. Con la Elastic IP, al prender
-  vuelve en la misma `100.60.9.84` y el agente reconecta solo.
-- El disco EBS (~30 GB) sigue cobrando unos centavos aunque esté apagada — normal.
-- Alerta de presupuesto configurada por si algo se sale de lo gratis.
+10. Instalar Sysmon en DC01 con una config curada (PowerShell como administrador):
+
+    ```powershell
+    mkdir C:\sysmon; cd C:\sysmon
+
+    Invoke-WebRequest -Uri https://download.sysinternals.com/files/Sysmon.zip -OutFile Sysmon.zip
+
+    Expand-Archive Sysmon.zip -DestinationPath .
+
+    Invoke-WebRequest -Uri https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml -OutFile sysmonconfig.xml
+
+    .\Sysmon64.exe -accepteula -i sysmonconfig.xml
+
+    Get-Service Sysmon64   # Deberia decir Running
+    ```
+
+    > Se usa la config de **SwiftOnSecurity** (referencia de la comunidad) en vez de
+    > la default: filtra el ruido de procesos benignos (`calc.exe`, etc.) y captura
+    > solo lo que tiene valor de detección. Instalar Sysmon sin config curada lo
+    > vuelve inservible por exceso de ruido.
+
+11. Decirle al agente Wazuh que lea el log de Sysmon. Editar
+    `C:\Program Files (x86)\ossec-agent\ossec.conf` y agregar, adentro del bloque
+    `</ossec_config>`:
+
+    ```xml
+      </ossec_config>
+      .
+      .
+      .
+      <localfile>
+         <location>Microsoft-Windows-Sysmon/Operational</location>
+         <log_format>eventchannel</log_format>
+      </localfile>
+      .
+      .
+      .
+      </ossec_config>
+    ```
+      ![alt text](imagenes/11ossec.conf.png)
+    Reiniciar el agente:
+
+    ```powershell
+    Restart-Service WazuhSvc
+    ```
+
+12. Verificar que la telemetría de Sysmon llega. En Threat Intelligence --> Threat Hunting -->
+    Events, filtrar:
+
+    ```
+    data.win.system.providerName: "Microsoft-Windows-Sysmon"
+    ```
+
+    El volumen de eventos salta de ~100 a ~500+ por día. Un `whoami /all` generó
+    detecciones como `net.exe account discovery` (T1087) y un PowerShell generó una
+    alerta **nivel 15** (ver triaje abajo).
+
+    > Prueba de que el filtrado funciona: `calc.exe` **no** aparece (la config lo
+    > ignora a propósito). Un SIEM que registra todo es un SIEM inútil; el valor está
+    > en registrar lo que importa.
+
+## Primer triaje  falso positivo nivel 15
+
+Un `powershell.exe -Command "whoami"` disparó la regla **92213** ("Executable file
+dropped in folder commonly used by malware"), **nivel 15 (crítico)**. En vez de
+confiar en el nivel, se investigó el evento.
+
+La regla se dispara con **Sysmon Event ID 11 (File Create)** cuando se crea un
+ejecutable/script en `AppData\Local\Temp`. El evento reveló:
+
+| Campo | Valor |
+|-------|-------|
+| targetFilename | `...\AppData\Local\Temp\__PSScriptPolicyTest_0statd2z.wqf.ps1` |
+| image (proceso) | `...\WindowsPowerShell\v1.0\powershell.exe` |
+| user | `CORP\Administrator` (yo) |
+
+El archivo `__PSScriptPolicyTest_*.ps1` lo crea **el propio PowerShell** al verificar
+su política de ejecución. Proceso legítimo + usuario legítimo + archivo conocido de
+Windows = **falso positivo**.
+
+![alt text](<imagenes/Primer triaje  falso positivo nivel 15.png>)
+
+> **Lección.** Una regla puede ser técnicamente correcta y aun así generar ruido. Un
+> nivel 15 no es un ataque por decreto; el analista correlaciona contexto (proceso
+> padre, usuario, archivo) antes de actuar. Confiar ciegamente en la severidad lleva
+> a *fatiga de alertas*. El triaje  recibir, investigar, clasificar  es el núcleo
+> del trabajo de un SOC.
+
