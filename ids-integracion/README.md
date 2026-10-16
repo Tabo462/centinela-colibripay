@@ -82,20 +82,32 @@ Brute-force contra DC01 (4625 en ráfaga)
 | IP crítica | `10.0.2.10` (DC) | `allowlisted` (alertada, no bloqueada) | #1 allowlist |
 | IP repetida | `8.8.8.8` otra vez | `already_blocked` | idempotencia |
 
+## Test 1 IP hostil
+```powershell
+curl.exe -X POST http://127.0.0.1:5000/block -H "Content-Type: application/json" -d '{\"ip\":\"8.8.8.8\"}'
+```
+![alt text](imagenes/Blocked1.png)
 La regla de firewall `IDS_Block_8.8.8.8` se confirmó con
 `netsh advfirewall firewall show rule name="IDS_Block_8.8.8.8"`.
+![alt text](imagenes/Blocekdproof.png)
 
-<!-- ![Unit test webhook](imagenes/webhook-unittest.png) -->
+## Test 2 IP critica
+```powershell
+curl.exe -X POST http://127.0.0.1:5000/block -H "Content-Type: application/json" -d '{\"ip\":\"10.0.2.10\"}'
+```
+![alt text](imagenes/Allowlisted.png)
+
+## Test 3 Idempotencia
+```powershell
+curl.exe -X POST http://127.0.0.1:5000/block -H "Content-Type: application/json" -d '{\"ip\":\"8.8.8.8\"}'
+```
+![alt text](imagenes/Idempotencia.png)
+
+### Logs del SOAR-lite
+![alt text](<imagenes/logs webhook.png>)
+
 
 **Prueba de fuego en vivo (pendiente — Semana 3).** El spray real contra DC01 requiere
 conectividad atacante(Kali)↔DC01, que es también el prerrequisito de la cadena de
 ataque de la Semana 3. Se hará como primer experimento de esa fase: spray -> Wazuh
 detecta (60204) -> active-response -> bloqueo automático -> verlo en el SIEM.
-
-## Estado
-
-- [x] `webhook.py` refactorizado con las 3 salvaguardas
-- [x] Unit-tested (bloqueo real, allowlist, idempotencia) con evidencia
-- [x] Bridge + wrapper `.cmd` desplegados en el agente de DC01
-- [x] Config del manager (command + active-response en rule 60204)
-- [ ] Prueba de fuego en vivo (spray real) → Semana 3, tras montar la red atacante↔DC01
