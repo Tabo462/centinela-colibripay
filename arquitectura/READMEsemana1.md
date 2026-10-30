@@ -22,7 +22,6 @@ Red NAT de VirtualBox: `10.0.2.0/24`
 |---------------|--------------|
 | Gateway (NAT) | `10.0.2.1`   | 
 | DC01          | `10.0.2.10`  | 
-| WKS01         | `10.0.2.20`  |        
 | Wazuh         | `10.0.2.30`  | 
 
 
@@ -78,7 +77,7 @@ corp.colibripay.mx
     │   └── OU=Soporte
     ├── OU=Grupos
     ├── OU=ServiceAccounts     ← cuentas de servicio, aisladas
-    └── OU=Equipos             ← destino de WKS01 (planeado)
+    └── OU=Equipos             ← reservada para equipos (sin uso en este alcance)
 ```
 
 Se usa una OU raíz propia (`ColibriPay`) en vez de trabajar sobre el dominio, para
@@ -151,7 +150,7 @@ Por default, Windows registra pocos eventos de seguridad. Se configura una Group
     - **Account Management → Audit User Account Management**: Success + Failure. (4720)
     - **Account Management → Audit Security Group Management**: Success.
     - **Detailed Tracking → Audit Process Creation**: Success. (4688)
-    ![alt text](<17Colocarsubcategory.png>)
+    ![alt text](<imagenes/17Colocarsubcategory.png>)
 19. Incluir linea de comando en el evento 4688 (Audit Process Creation):
 
 Computer Configuration → Policies → Administrative Templates → System →

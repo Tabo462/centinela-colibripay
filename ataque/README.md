@@ -19,8 +19,8 @@ gap), y la evidencia.
 
 | # | Técnica | MITRE | Comando (Kali) | Detección (Wazuh) | Evidencia |
 |---|---------|-------|----------------|-------------------|-----------|
-| 1 | Password spraying | T1110.003 | `nxc smb 192.168.0.130 -u mtorres -p <lista>` | Regla **60204** "Multiple Windows Logon Failures" (nivel 10), compuesta de 4625/60122 | `/evidencia/semana3` |
-| 2 | Kerberoasting | T1558.003 | `nxc ldap ... --kerberoasting` + `hashcat -m 13100` | Regla **custom 100200** (nivel 12): 4769 + RC4 (0x17) a cuenta de servicio | `/evidencia/semana3`|
+| 1 | Password spraying | T1110.003 | `nxc smb 192.168.0.130 -u mtorres -p <lista>` | Regla **60204** "Multiple Windows Logon Failures" (nivel 10), compuesta de 4625/60122 | `PasswordSpray/` |
+| 2 | Kerberoasting | T1558.003 | `nxc ldap ... --kerberoasting` + `hashcat -m 13100` | Regla **custom 100200** (nivel 12): 4769 + RC4 (0x17) a cuenta de servicio | `Kerberoasting/` |
 
 ---
 

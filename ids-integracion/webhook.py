@@ -15,10 +15,12 @@ LISTEN_PORT = 5000 # El puerto donde escucha el webhook
 # Allowlist: IPs que NUNCA se bloquean para prevenir Auto-DoS
 
 ALLOWLIST = {
-    "127.0.0.1", #Localhost
-    "::1",       #Localhost IPv6
-    "10.0.2.10", #DC01 - El propio controlador de dominio
-    "10.0.2.1", # Gateway de la red del lab
+    "127.0.0.1",     # Localhost
+    "::1",           # Localhost IPv6
+    "10.0.2.10",     # DC01 en la red NAT (fase de construccion)
+    "10.0.2.1",      # Gateway NAT del lab
+    "192.168.0.130", # DC01 en la red Bridged (fase de ataque) <- IP real durante el active-response
+    "192.168.0.1",   # Gateway de la red Bridged del lab
 }
 
 

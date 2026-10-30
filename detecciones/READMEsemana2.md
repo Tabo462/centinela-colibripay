@@ -5,7 +5,7 @@ la nube, con el agente on-prem reportando a través de internet de forma segura.
 
 ## Arquitectura: por qué el SIEM vive en la nube
 
-El host local (16 GB RAM) no aguanta DC01 + WKS01 + Wazuh a la vez (Wazuh solo pide
+El host local (16 GB RAM) no aguanta DC01 + Wazuh a la vez (Wazuh solo pide
 ~4 GB y su indexer es pesado). En vez de ahogar la RAM, el SIEM se saca a la nube.
 Esto resuelve el límite de memoria y suma un componente cloud real al proyecto.
 
@@ -196,9 +196,6 @@ Semana 3.
     detecciones como `net.exe account discovery` (T1087) y un PowerShell generó una
     alerta **nivel 15** (ver triaje abajo).
 
-    > Prueba de que el filtrado funciona: `calc.exe` **no** aparece (la config lo
-    > ignora a propósito). Un SIEM que registra todo es un SIEM inútil; el valor está
-    > en registrar lo que importa.
 
 ## Primer triaje  falso positivo nivel 15
 

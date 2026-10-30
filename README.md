@@ -2,9 +2,9 @@
  
 Proyecto que tiene como fin poner en práctica y descubrir el proceso de construir, atacar, defender y documentar el entorno de una fintech mexicana ficticia.
  
-Laboratorio de detección de respuestas sobre un ecosistema empresarial simulado llamado **Colibrí Pay**.
+Laboratorio de detección y respuesta sobre un ecosistema empresarial simulado llamado **Colibrí Pay**.
  
-El proyecto construye un dominio Active Directory con extensión a la nube, tiene un SIEM, ejecuta una cadena de ataque mapeada a MITRE ATT&CK, valida detección y la contención automatizada, y documenta todo como evidencia.
+El proyecto construye un dominio Active Directory con extensión a la nube, tiene un SIEM, ejecuta una cadena de ataque mapeada a MITRE ATT&CK, valida la detección en el SIEM, prueba de forma aislada la lógica de contención automatizada (el disparo end-to-end del active-response queda documentado como pendiente) y documenta todo como evidencia.
  
 ---
  
@@ -25,20 +25,19 @@ Cerrar la brecha entre habilidad ofensiva y experiencia en un entorno corporativ
  
 Ver el directorio [`/arquitectura`](./arquitectura) para ver el diagrama.
  
-**Resumen:** AD on-prem con estación de trabajo, SIEM, con identidad extendida a Microsoft Entra ID. Todo en VMs sobre un host de 16 GB, el atacante es una instancia de Kali en WSL.
+**Resumen:** AD on-prem con un SIEM (Wazuh) desplegado en la nube (AWS). Todo en VMs sobre un host de 16 GB; el atacante es una instancia de Kali en WSL.
  
 ---
  
 ## Stack
  
-- **Directorio** — Windows Server 2022 + Active Directory · Dominio, DNS, GPO
-- **Endpoint** — Windows 11 Enterprise LTSC · Estación de trabajo y víctima
-- **Telemetría** — Sysmon · Profundidad de telemetría en Windows
-- **SIEM** — Wazuh · Correlación, detección, respuesta
-- **Nube** — Microsoft Entra ID · Identidad, acceso condicional
-- **Ataque** — Kali WSL · Adversario
-- **Respuesta** — IDS propio creado anteriormente con Python y Flask · Active-response de bloqueo automático
-- **Framework** — MITRE ATT&CK · NIST CSF · ISO 27001 · Mapeo técnico y de cumplimiento
+- **Directorio** — Windows Server 2022 + Active Directory | Dominio, DNS, GPO
+- **Telemetría** — Sysmon | Profundidad de telemetría en Windows
+- **SIEM** — Wazuh | Correlación, detección, respuesta
+- **Nube** — AWS EC2 | Hospeda el SIEM (Wazuh) con IP elástica fija y Security Group restringido
+- **Ataque** — Kali WSL | Adversario
+- **Respuesta** — IDS propio creado anteriormente con Python y Flask | Active-response de bloqueo automático
+- **Framework** — MITRE ATT&CK | NIST CSF | ISO 27001 | Mapeo técnico y de cumplimiento
 ---
  
 ## Estructura del repositorio
@@ -50,9 +49,10 @@ centinela-colibripay/
 ├── ataque/            Cadena MITRE ATT&CK y matriz ataque↔detección
 ├── ids-integracion/   Integración del IDS propio como active-response del SIEM
 ├── incidente/         Reporte de respuesta a incidentes
-├── cumplimiento/      Mapeo de controles a NIST CSF 2.0 e ISO 27001
-└── evidencia/         Capturas de pantalla
+└── cumplimiento/      Mapeo de controles a NIST CSF 2.0 e ISO 27001
 ```
+ 
+> Las capturas de evidencia viven dentro de la carpeta de cada fase (p. ej. `ataque/PasswordSpray/`, `ataque/Kerberoasting/`, `detecciones/imagenes/`, `ids-integracion/imagenes/`).
  
 ---
  
